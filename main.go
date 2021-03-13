@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,6 +19,14 @@ func main() {
 	//App starting
 	log.Println("main: started")
 	defer log.Println("main: completed")
+
+	//Setup dependencies
+
+	db, err := openDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	//Start api service
 	api := http.Server{
@@ -58,13 +69,28 @@ func main() {
 		//Asking listener to shutdown and load shed
 		err := api.Shutdown(ctx)
 		if err != nil {
-			log.Println("main: grateful shutdown did not complete in %v : %v", timeout, err)
+			log.Printf("main : Graceful shutdown did not complete in %v : %v", timeout, err)
 			err = api.Close()
 		}
 		if err != nil {
 			log.Fatalf("main: could not stop server gracefully: %v", err)
 		}
 	}
+}
+
+func openDB() (*sqlx.DB, error) {
+	q := url.Values{}
+	q.Set("sslmode", "disable")
+	q.Set("timezone", "utc")
+
+	u := url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword("postgres", "postgres"),
+		Host:     "localhost",
+		Path:     "postgres",
+		RawQuery: q.Encode(),
+	}
+	return sqlx.Open("postgres", u.String())
 }
 
 type Product struct {
