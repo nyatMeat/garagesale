@@ -3,8 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"flag"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,6 +11,10 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/nyatMeat/garagesale/schema"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -27,6 +30,12 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	flag.Parse()
+	switch flag.Arg(0) {
+	case "migrate":
+	case "seed":
+	}
 
 	//Start api service
 	api := http.Server{
