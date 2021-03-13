@@ -24,6 +24,11 @@ func main() {
 
 func run() error {
 
+	//Init logger
+
+	log := log.New(os.Stdout, "SALES : ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
+
+	//Init config db and web server
 	var cfg struct {
 		Web struct {
 			Address         string        `conf:"default:localhost:20000"`
@@ -81,14 +86,12 @@ func run() error {
 	}
 	defer db.Close()
 
-	productsHandler := handlers.Products{DB: db}
-
 	// =========================================================================
 	// Start API Service
 
 	api := http.Server{
 		Addr:         cfg.Web.Address,
-		Handler:      http.HandlerFunc(productsHandler.List),
+		Handler:      handlers.API(log, db),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}
