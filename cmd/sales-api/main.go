@@ -3,19 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/nyatmeat/garagesale/cmd/sales-api/internal/handlers"
+	"github.com/nyatmeat/garagesale/internal/platform/conf"
+	"github.com/nyatmeat/garagesale/internal/platform/database"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/nyatmeat/garagesale/cmd/sales-api/internal/handlers"
-	"github.com/nyatmeat/garagesale/internal/platform/conf"
-	"github.com/nyatmeat/garagesale/internal/platform/database"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Println("shutting down", "error:", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 
 	var cfg struct {
 		Web struct {
@@ -29,7 +36,7 @@ func main() {
 			Password   string `conf:"default:postgres,noprint"`
 			Host       string `conf:"default:localhost"`
 			Name       string `conf:"default:postgres"`
-			DisableTLS bool   `conf:"default:false"`
+			DisableTLS bool   `conf:"default:true"`
 		}
 	}
 
@@ -44,17 +51,17 @@ func main() {
 		if err == conf.ErrHelpWanted {
 			usage, err := conf.Usage("SALES", &cfg)
 			if err != nil {
-				log.Fatalf("error : generating config usage : %v", err)
+				return errors.Wrap(err, "error : generating config usage")
 			}
 			fmt.Println(usage)
-			return
+			return nil
 		}
-		log.Fatalf("error: parsing config: %s", err)
+		return errors.Wrap(err, "error: parsing config: %s")
 	}
 
 	out, err := conf.String(&cfg)
 	if err != nil {
-		log.Fatalf("error : generating config for output : %v", err)
+		return errors.Wrap(err, "error : generating config for output")
 	}
 	log.Printf("main : Config :\n%v\n", out)
 
@@ -62,16 +69,15 @@ func main() {
 	// Start Database
 
 	db, err := database.Open(database.Config{
-		Host: cfg.DB.Host,
-		Name: cfg.DB.Name,
-		User: cfg.DB.User,
-		Password: cfg.DB.Password,
+		Host:       cfg.DB.Host,
+		Name:       cfg.DB.Name,
+		User:       cfg.DB.User,
+		Password:   cfg.DB.Password,
 		DisableTLS: cfg.DB.DisableTLS,
 	})
 
-
 	if err != nil {
-		log.Fatalf("error: connecting to db: %s", err)
+		return errors.Wrap(err, "error: connecting to db")
 	}
 	defer db.Close()
 
@@ -108,7 +114,7 @@ func main() {
 	// Blocking main and waiting for shutdown.
 	select {
 	case err := <-serverErrors:
-		log.Fatalf("error: starting server: %s", err)
+		return errors.Wrap(err, "error: starting server: %s")
 
 	case <-shutdown:
 		log.Println("main : Start shutdown")
@@ -125,7 +131,8 @@ func main() {
 		}
 
 		if err != nil {
-			log.Fatalf("main : could not stop server gracefully : %v", err)
+			return errors.Wrap(err, "main : could not stop server gracefully : %v")
 		}
 	}
+	return nil
 }

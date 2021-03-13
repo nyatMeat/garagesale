@@ -8,11 +8,11 @@ import (
 )
 
 // COnfig for database connection
-type Config struct{
-	Host string
-	Name string
-	User string
-	Password string
+type Config struct {
+	Host       string
+	Name       string
+	User       string
+	Password   string
 	DisableTLS bool
 }
 
