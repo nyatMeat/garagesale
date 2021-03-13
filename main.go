@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nyatMeat/garagesale/schema"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/nyatmeat/garagesale/schema"
 )
 
 func main() {
@@ -34,13 +34,26 @@ func main() {
 	flag.Parse()
 	switch flag.Arg(0) {
 	case "migrate":
+		if err := schema.Migrate(db); err != nil {
+			log.Fatal("applying migrations", err)
+
+		}
+		log.Println("Migration completed")
+		return
 	case "seed":
+		if err := schema.Seed(db); err != nil {
+			log.Fatal("applying seed data", err)
+		}
+		log.Println("Aplying seed completed")
+		return
 	}
+
+	productServ := ProductService{db: db}
 
 	//Start api service
 	api := http.Server{
 		Addr:         "localhost:20000",
-		Handler:      http.HandlerFunc(ListProducts),
+		Handler:      http.HandlerFunc(productServ.List),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 	}
@@ -103,21 +116,31 @@ func openDB() (*sqlx.DB, error) {
 }
 
 type Product struct {
-	Name     string `json:"name"`
-	Cost     int    `json:"cost"`
-	Quantity int    `json:"quantity"`
+	ID          string    `db:"product_id" json:"id"`
+	Name        string    `db:"name" json:"name"`
+	Cost        int       `db:"cost" json:"cost"`
+	Quantity    int       `db:"quantity" json:"quantity"`
+	DateCreated time.Time `db:"date_created" json:"date_created"`
+	DateUpdated time.Time `db:"date_updated" json:"date_updated"`
+}
+
+type ProductService struct {
+	db *sqlx.DB
 }
 
 // Echo is a basic HTTP Handler.
 // If you open localhost:20000 in your browser, you may notice
 // double requets being made. This happens because the browser
 // sends a request in the background for a website favicon.
-func ListProducts(w http.ResponseWriter, r *http.Request) {
+func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
 	list := []Product{}
 
-	if true {
-		list = append(list, Product{Name: "Comic book", Cost: 85, Quantity: 50})
-		list = append(list, Product{Name: "Mcdonald toys", Cost: 50, Quantity: 30})
+	const q = "SELECT product_id, name, cost, quantity, date_created, date_updated FROM products"
+
+	if err := p.db.Select(&list, q); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println("error querying db", err)
+		return
 	}
 
 	data, err := json.Marshal(list)
