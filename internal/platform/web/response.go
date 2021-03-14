@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -8,7 +9,15 @@ import (
 )
 
 // Respond converts a Go value to JSON and sends it to the client.
-func Respond(w http.ResponseWriter, data interface{}, statusCode int) error {
+func Respond(ctxt context.Context, w http.ResponseWriter, data interface{}, statusCode int) error {
+
+	v, ok := ctxt.Value(KeyValues).(*Values)
+
+	if !ok {
+		return errors.New("web values missing from context")
+	}
+
+	v.StatusCode = statusCode
 
 	// Convert the response value to JSON.
 	res, err := json.Marshal(data)
@@ -27,7 +36,7 @@ func Respond(w http.ResponseWriter, data interface{}, statusCode int) error {
 }
 
 // RespondError sends an error reponse back to the client.
-func RespondError(w http.ResponseWriter, err error) error {
+func RespondError(ctxt context.Context, w http.ResponseWriter, err error) error {
 
 	// If the error was of the type *Error, the handler has
 	// a specific status code and error to return.
@@ -36,7 +45,7 @@ func RespondError(w http.ResponseWriter, err error) error {
 			Error:  webErr.Err.Error(),
 			Fields: webErr.Fields,
 		}
-		if err := Respond(w, er, webErr.Status); err != nil {
+		if err := Respond(ctxt, w, er, webErr.Status); err != nil {
 			return err
 		}
 		return nil
@@ -46,7 +55,7 @@ func RespondError(w http.ResponseWriter, err error) error {
 	er := ErrorResponse{
 		Error: http.StatusText(http.StatusInternalServerError),
 	}
-	if err := Respond(w, er, http.StatusInternalServerError); err != nil {
+	if err := Respond(ctxt, w, er, http.StatusInternalServerError); err != nil {
 		return err
 	}
 	return nil

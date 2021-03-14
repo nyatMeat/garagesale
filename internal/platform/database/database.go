@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/jmoiron/sqlx"
@@ -36,4 +37,11 @@ func Open(conf Config) (*sqlx.DB, error) {
 	}
 
 	return sqlx.Open("postgres", u.String())
+}
+
+func StatusCheck(ctxt context.Context, db *sqlx.DB) error {
+
+	const q = `SELECT true`
+	var tmp bool
+	return db.QueryRowContext(ctxt, q).Scan(&tmp)
 }

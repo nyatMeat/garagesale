@@ -28,7 +28,7 @@ func (productService *Products) List(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	return web.Respond(w, list, http.StatusOK)
+	return web.Respond(r.Context(), w, list, http.StatusOK)
 }
 
 // List gets all products from the service layer and encodes them for the
@@ -48,7 +48,7 @@ func (productService *Products) Retrieve(w http.ResponseWriter, r *http.Request)
 			return errors.Wrapf(err, "looking for product %q", id)
 		}
 	}
-	return web.Respond(w, productElement, http.StatusOK)
+	return web.Respond(r.Context(), w, productElement, http.StatusOK)
 }
 
 //Create decode JSON document from a POST request and create a new product
@@ -63,7 +63,7 @@ func (productService *Products) Create(w http.ResponseWriter, r *http.Request) e
 	if err != nil {
 		return err
 	}
-	return web.Respond(w, product, http.StatusCreated)
+	return web.Respond(r.Context(), w, product, http.StatusCreated)
 }
 
 // Update decodes the body of a request to update an existing product. The ID
@@ -87,7 +87,7 @@ func (p *Products) Update(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	return web.Respond(w, nil, http.StatusNoContent)
+	return web.Respond(r.Context(), w, nil, http.StatusNoContent)
 }
 
 // Delete removes a single product identified by an ID in the request URL.
@@ -103,9 +103,8 @@ func (p *Products) Delete(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	return web.Respond(w, nil, http.StatusNoContent)
+	return web.Respond(r.Context(), w, nil, http.StatusNoContent)
 }
-
 
 // AddSale creates a new Sale for a particular product. It looks for a JSON
 // object in the request body. The full model is returned to the caller.
@@ -122,7 +121,7 @@ func (p *Products) AddSale(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "adding new sale")
 	}
 
-	return web.Respond(w, sale, http.StatusCreated)
+	return web.Respond(r.Context(), w, sale, http.StatusCreated)
 }
 
 // ListSales gets all sales for a particular product.
@@ -134,6 +133,5 @@ func (p *Products) ListSales(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "getting sales list")
 	}
 
-	return web.Respond(w, list, http.StatusOK)
+	return web.Respond(r.Context(), w, list, http.StatusOK)
 }
-

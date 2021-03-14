@@ -1,36 +1,60 @@
 package web
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 )
 
+//ctxKey represents the type of value for the context key
+type ctxKey int
+
+//KeyValues is how request values or stored/retrieved
+const KeyValues ctxKey = 1
+
+// Values carries information about each request.
+type Values struct {
+	StatusCode int
+	Start      time.Time
+}
+
 //App is entrypooint for all web applications
 type App struct {
-	mux *chi.Mux
-	log *log.Logger
+	mux           *chi.Mux
+	log           *log.Logger
+	midlewareList []Middleware
 }
 
 //Handlers is the signature that all application handlers will implement
 type Handler func(http.ResponseWriter, *http.Request) error
 
 //NewApp knows how to construct internal state for an App
-func NewApp(logger *log.Logger) *App {
+func NewApp(logger *log.Logger, mw ...Middleware) *App {
 
-	return &App{mux: chi.NewMux(), log: logger}
+	return &App{mux: chi.NewMux(), log: logger, midlewareList: mw}
 }
 
 //Handle connects a method and URL pattern to a particular application handler
 func (app *App) Handle(method, pattern string, handler Handler) {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if err := handler(w, r); err != nil {
-			app.log.Printf("ERROR: %v", err)
 
-			if err := RespondError(w, err); err != nil {
-				app.log.Printf("ERROR: %v", err)
-			}
+	handler = wrapMiddleware(app.midlewareList, handler)
+
+	fn := func(w http.ResponseWriter, r *http.Request) {
+
+		v := Values{
+			Start: time.Now(),
+		}
+
+		ctxt := r.Context()
+		ctxt = context.WithValue(ctxt, KeyValues, &v)
+
+		r = r.WithContext(ctxt)
+
+		if err := handler(w, r); err != nil {
+			app.log.Printf("ERROR: Unhandled error %v", err)
 		}
 	}
 	app.mux.MethodFunc(method, pattern, fn)

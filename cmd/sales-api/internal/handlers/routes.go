@@ -5,11 +5,17 @@ import (
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/nyatmeat/garagesale/cmd/sales-api/internal/mid"
 	"github.com/nyatmeat/garagesale/internal/platform/web"
 )
 
 func API(log *log.Logger, db *sqlx.DB) http.Handler {
-	app := web.NewApp(log)
+	app := web.NewApp(log, mid.Logger(log), mid.Errors(log), mid.Metrics())
+
+	c := Check{DB: db}
+
+	app.Handle(http.MethodGet, "/v1/health", c.Health)
+
 	p := Products{DB: db, Log: log}
 	app.Handle(http.MethodGet, "/v1/products", p.List)
 	app.Handle(http.MethodPost, "/v1/products", p.Create)
