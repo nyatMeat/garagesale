@@ -42,6 +42,23 @@ CREATE TABLE IF NOT EXISTS sales (
 	FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
 );`,
 	},
+	{
+		Version:     3,
+		Description: "Add users",
+		Script: `
+CREATE TABLE users (
+	user_id       UUID,
+	name          TEXT,
+	email         TEXT UNIQUE,
+	roles         TEXT[],
+	password_hash TEXT,
+
+	date_created TIMESTAMP,
+	date_updated TIMESTAMP,
+
+	PRIMARY KEY (user_id)
+);`,
+	},
 }
 
 // Migrate attempts to bring the schema for db up to date with the migrations
