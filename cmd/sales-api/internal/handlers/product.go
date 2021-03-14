@@ -20,62 +20,46 @@ type Products struct {
 
 // List gets all products from the service layer and encodes them for the
 // client response.
-func (p *Products) List(w http.ResponseWriter, r *http.Request) {
+func (p *Products) List(w http.ResponseWriter, r *http.Request) error {
 
 	p.Log.Println("Getting list of products")
 
 	list, err := product.List(p.DB)
 	if err != nil {
-		p.Log.Printf("error: listing products: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	if err := web.Respond(w, list, http.StatusOK); err != nil {
-		p.Log.Println("error marshalling result", err)
-		return
-	}
+	return web.Respond(w, list, http.StatusOK)
 }
 
 // List gets all products from the service layer and encodes them for the
 // client response.
-func (p *Products) Retrieve(w http.ResponseWriter, r *http.Request) {
+func (p *Products) Retrieve(w http.ResponseWriter, r *http.Request) error {
 
 	p.Log.Println("retrieving the single product")
 	id := chi.URLParam(r, "id")
 	product, err := product.Retrieve(p.DB, id)
+	
 	if err != nil {
-		p.Log.Printf("error: retrieving product: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	if err := web.Respond(w, product, http.StatusOK); err != nil {
-		p.Log.Println("error marshalling result", err)
-		return
-	}
+	return web.Respond(w, product, http.StatusOK)
 }
 
 //Create decode JSON document from a POST request and create a new product
-func (p *Products) Create(w http.ResponseWriter, r *http.Request) {
+func (p *Products) Create(w http.ResponseWriter, r *http.Request) error {
 
 	var np product.NewProduct
 	if err := web.Decode(r, np); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		p.Log.Println(err)
-		return
+		return err
 	}
 
 	p.Log.Printf("creating a new product: %v", np)
 
 	product, err := product.Create(p.DB, np, time.Now())
 	if err != nil {
-		p.Log.Printf("error: creating new product: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
-	if err := web.Respond(w, product, http.StatusCreated); err != nil {
-		p.Log.Println("error marshalling result", err)
-		return
-	}
+	return web.Respond(w, product, http.StatusCreated)
 }
