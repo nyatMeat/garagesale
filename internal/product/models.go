@@ -18,9 +18,9 @@ type Product struct {
 
 // New product is what we require from clients to make a new Product
 type NewProduct struct {
-	Name     string `json:"name"`
-	Cost     int    `json:"cost"`
-	Quantity int    `json:"quantity"`
+	Name     string `json:"name" validate:"required"`
+	Cost     int    `json:"cost" validate:"gte=0"`
+	Quantity int    `json:"quantity" validate:"gte=1"`
 }
 
 type Sale struct {
@@ -32,6 +32,6 @@ type Sale struct {
 }
 
 type NewSale struct {
-	Quantity int `json:"quantity"`
-	Paid     int `json:"paid"`
+	Quantity int `json:"quantity" validate:"gte=0"`
+	Paid     int `json:"paid" validate:"gte=0"`
 }
