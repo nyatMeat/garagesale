@@ -19,7 +19,16 @@ var (
 func List(ctxt context.Context, db *sqlx.DB) ([]Product, error) {
 	products := []Product{}
 
-	const q = `SELECT product_id, quantity, cost, name, date_created, date_updated FROM products`
+	const q = `SELECT
+		p.product_id, p.quantity, p.cost, p.name,
+		COALESCE(SUM(s.paid), 0) as revenue,
+		COALESCE(SUM(s.quantity), 0) as sold,
+		p.date_created, p.date_updated 
+	 
+	 FROM products AS p
+	 LEFT JOIN sales AS s ON p.product_id = s.product_id 
+	 GROUP BY p.product_id
+	`
 
 	if err := db.SelectContext(ctxt, &products, q); err != nil {
 		return nil, errors.Wrap(err, "selecting products")
@@ -36,9 +45,17 @@ func Retrieve(ctxt context.Context, db *sqlx.DB, id string) (*Product, error) {
 		return nil, ErrInvalidId
 	}
 
-	const q = `SELECT product_id, quantity, cost, name, date_created, date_updated 
-		FROM products
-		WHERE product_id = $1`
+	const q = `SELECT 
+			p.product_id, p.quantity, p.cost, p.name,
+			COALESCE(SUM(s.paid), 0) as revenue,
+			COALESCE(SUM(s.quantity), 0) as sold,
+			p.date_created, p.date_updated 
+
+		FROM products AS p 
+		LEFT JOIN sales AS s ON s.product_id = p.product_id
+		WHERE p.product_id = $1
+		GROUP BY p.product_id
+		`
 
 	if err := db.GetContext(ctxt, &product, q, id); err != nil {
 		if err == sql.ErrNoRows {
