@@ -25,17 +25,17 @@ func Respond(w http.ResponseWriter, val interface{}, statusCode int) error {
 }
 
 // Respond error knows how to handle errors going to the client.
-func RespondError(w http.ResponseWriter, err error) error {
+func RespondError(writer http.ResponseWriter, err error) error {
 
 	if webErr, ok := err.(*Error); ok {
-		resp := ErrorResponse{
+		response := ErrorResponse{
 			Error: webErr.Err.Error(),
 		}
-		return Respond(w, resp, webErr.Status)
+		return Respond(writer, response, webErr.Status)
 	}
-	resp := ErrorResponse{
+	response := ErrorResponse{
 		Error: http.StatusText(http.StatusInternalServerError),
 	}
-	return Respond(w, resp, http.StatusInternalServerError)
+	return Respond(writer, response, http.StatusInternalServerError)
 
 }

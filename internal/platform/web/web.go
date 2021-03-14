@@ -23,19 +23,19 @@ func NewApp(logger *log.Logger) *App {
 }
 
 //Handle connects a method and URL pattern to a particular application handler
-func (a *App) Handle(method, pattern string, h Handler) {
+func (app *App) Handle(method, pattern string, handler Handler) {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		if err := h(w, r); err != nil {
-			a.log.Printf("ERROR: %v", err)
+		if err := handler(w, r); err != nil {
+			app.log.Printf("ERROR: %v", err)
 
 			if err := RespondError(w, err); err != nil {
-				a.log.Printf("ERROR: %v", err)
+				app.log.Printf("ERROR: %v", err)
 			}
 		}
 	}
-	a.mux.MethodFunc(method, pattern, fn)
+	app.mux.MethodFunc(method, pattern, fn)
 }
 
-func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	a.mux.ServeHTTP(w, r)
+func (app *App) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	app.mux.ServeHTTP(writer, request)
 }

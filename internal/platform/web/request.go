@@ -6,8 +6,8 @@ import (
 )
 
 //Decode looks for a JSON document body in the request body and unmarhals it into that
-func Decode(r *http.Request, val interface{}) error {
-	if err := json.NewDecoder(r.Body).Decode(&val); err != nil {
+func Decode(request *http.Request, value interface{}) error {
+	if err := json.NewDecoder(request.Body).Decode(&value); err != nil {
 
 		return NewRequestError(err, http.StatusBadRequest)
 	}

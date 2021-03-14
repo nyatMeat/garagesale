@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/nyatmeat/garagesale/internal/platform/web"
 	"github.com/nyatmeat/garagesale/internal/product"
+	"github.com/pkg/errors"
 )
 
 // Products defines all of the handlers related to products. It holds the
@@ -20,11 +21,9 @@ type Products struct {
 
 // List gets all products from the service layer and encodes them for the
 // client response.
-func (p *Products) List(w http.ResponseWriter, r *http.Request) error {
+func (productService *Products) List(w http.ResponseWriter, r *http.Request) error {
 
-	p.Log.Println("Getting list of products")
-
-	list, err := product.List(p.DB)
+	list, err := product.List(productService.DB)
 	if err != nil {
 		return err
 	}
@@ -34,30 +33,33 @@ func (p *Products) List(w http.ResponseWriter, r *http.Request) error {
 
 // List gets all products from the service layer and encodes them for the
 // client response.
-func (p *Products) Retrieve(w http.ResponseWriter, r *http.Request) error {
+func (productService *Products) Retrieve(w http.ResponseWriter, r *http.Request) error {
 
-	p.Log.Println("retrieving the single product")
 	id := chi.URLParam(r, "id")
-	product, err := product.Retrieve(p.DB, id)
-	
-	if err != nil {
-		return err
-	}
+	productElement, err := product.Retrieve(productService.DB, id)
 
-	return web.Respond(w, product, http.StatusOK)
+	if err != nil {
+		switch err {
+		case product.ErrNotFound:
+			return web.NewRequestError(err, http.StatusNotFound)
+		case product.ErrInvalidId:
+			return web.NewRequestError(err, http.StatusBadRequest)
+		default:
+			return errors.Wrapf(err, "looking for product %q", id)
+		}
+	}
+	return web.Respond(w, productElement, http.StatusOK)
 }
 
 //Create decode JSON document from a POST request and create a new product
-func (p *Products) Create(w http.ResponseWriter, r *http.Request) error {
+func (productService *Products) Create(w http.ResponseWriter, r *http.Request) error {
 
 	var np product.NewProduct
 	if err := web.Decode(r, np); err != nil {
 		return err
 	}
 
-	p.Log.Printf("creating a new product: %v", np)
-
-	product, err := product.Create(p.DB, np, time.Now())
+	product, err := product.Create(productService.DB, np, time.Now())
 	if err != nil {
 		return err
 	}

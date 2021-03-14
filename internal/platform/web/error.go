@@ -16,6 +16,6 @@ func NewRequestError(err error, status int) error {
 }
 
 //Returning the error string
-func (e *Error) Error() string {
-	return e.Err.Error()
+func (error *Error) Error() string {
+	return error.Err.Error()
 }
