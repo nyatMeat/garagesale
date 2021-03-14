@@ -12,10 +12,10 @@ import (
 
 	// NOTE: Models should not be imported, we want to test the exact JSON. We
 	// make the comparison process easier using the go-cmp library.
+	"github.com/google/go-cmp/cmp"
 	"github.com/nyatmeat/garagesale/cmd/sales-api/internal/handlers"
 	"github.com/nyatmeat/garagesale/internal/schema"
 	"github.com/nyatmeat/garagesale/internal/tests"
-	"github.com/google/go-cmp/cmp"
 )
 
 // TestProducts runs a series of tests to exercise Product behavior from the

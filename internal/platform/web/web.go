@@ -29,7 +29,7 @@ type App struct {
 }
 
 //Handlers is the signature that all application handlers will implement
-type Handler func(http.ResponseWriter, *http.Request) error
+type Handler func(context.Context, http.ResponseWriter, *http.Request) error
 
 //NewApp knows how to construct internal state for an App
 func NewApp(logger *log.Logger, mw ...Middleware) *App {
@@ -48,13 +48,11 @@ func (app *App) Handle(method, pattern string, handler Handler) {
 			Start: time.Now(),
 		}
 
-		ctxt := r.Context()
-		ctxt = context.WithValue(ctxt, KeyValues, &v)
+		ctx := context.WithValue(r.Context(), KeyValues, &v)
 
-		r = r.WithContext(ctxt)
-
-		if err := handler(w, r); err != nil {
-			app.log.Printf("ERROR: Unhandled error %v", err)
+		// Run the handler chain and catch any propagated error.
+		if err := handler(ctx, w, r); err != nil {
+			app.log.Printf("Unhandled error: %+v", err)
 		}
 	}
 	app.mux.MethodFunc(method, pattern, fn)

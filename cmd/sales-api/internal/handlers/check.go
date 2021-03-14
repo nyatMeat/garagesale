@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -13,16 +14,16 @@ type Check struct {
 }
 
 //Healt responds with a 200 if service is healthy and ready for trafic
-func (c *Check) Health(w http.ResponseWriter, r *http.Request) error {
+func (c *Check) Health(ctxt context.Context, w http.ResponseWriter, r *http.Request) error {
 
 	var health struct {
 		Status string `json:"status"`
 	}
 
-	if err := database.StatusCheck(r.Context(), c.DB); err != nil {
+	if err := database.StatusCheck(ctxt, c.DB); err != nil {
 		health.Status = "DB is not ready"
-		return web.Respond(r.Context(), w, health, http.StatusInternalServerError)
+		return web.Respond(ctxt, w, health, http.StatusInternalServerError)
 	}
 	health.Status = "OK"
-	return web.Respond(r.Context(), w, health, http.StatusOK)
+	return web.Respond(ctxt, w, health, http.StatusOK)
 }
