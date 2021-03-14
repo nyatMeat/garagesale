@@ -23,7 +23,7 @@ type Products struct {
 // client response.
 func (productService *Products) List(w http.ResponseWriter, r *http.Request) error {
 
-	list, err := product.List(productService.DB)
+	list, err := product.List(r.Context(), productService.DB)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (productService *Products) List(w http.ResponseWriter, r *http.Request) err
 func (productService *Products) Retrieve(w http.ResponseWriter, r *http.Request) error {
 
 	id := chi.URLParam(r, "id")
-	productElement, err := product.Retrieve(productService.DB, id)
+	productElement, err := product.Retrieve(r.Context(), productService.DB, id)
 
 	if err != nil {
 		switch err {
@@ -59,7 +59,7 @@ func (productService *Products) Create(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	product, err := product.Create(productService.DB, np, time.Now())
+	product, err := product.Create(r.Context(), productService.DB, np, time.Now())
 	if err != nil {
 		return err
 	}

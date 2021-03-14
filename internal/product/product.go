@@ -1,6 +1,7 @@
 package product
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -15,12 +16,12 @@ var (
 )
 
 // List gets all Products from the database.
-func List(db *sqlx.DB) ([]Product, error) {
+func List(ctxt context.Context, db *sqlx.DB) ([]Product, error) {
 	products := []Product{}
 
 	const q = `SELECT product_id, quantity, cost, name, date_created, date_updated FROM products`
 
-	if err := db.Select(&products, q); err != nil {
+	if err := db.SelectContext(ctxt, &products, q); err != nil {
 		return nil, errors.Wrap(err, "selecting products")
 	}
 
@@ -28,7 +29,7 @@ func List(db *sqlx.DB) ([]Product, error) {
 }
 
 // Retrieve the single product
-func Retrieve(db *sqlx.DB, id string) (*Product, error) {
+func Retrieve(ctxt context.Context, db *sqlx.DB, id string) (*Product, error) {
 	var product Product
 
 	if _, err := uuid.Parse(id); err != nil {
@@ -39,7 +40,7 @@ func Retrieve(db *sqlx.DB, id string) (*Product, error) {
 		FROM products
 		WHERE product_id = $1`
 
-	if err := db.Get(&product, q, id); err != nil {
+	if err := db.GetContext(ctxt, &product, q, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrNotFound
 		}
@@ -50,7 +51,7 @@ func Retrieve(db *sqlx.DB, id string) (*Product, error) {
 }
 
 //Create a new Product
-func Create(db *sqlx.DB, np NewProduct, now time.Time) (*Product, error) {
+func Create(ctxt context.Context, db *sqlx.DB, np NewProduct, now time.Time) (*Product, error) {
 
 	newProduct := Product{
 		ID:          uuid.New().String(),
@@ -65,7 +66,7 @@ func Create(db *sqlx.DB, np NewProduct, now time.Time) (*Product, error) {
 	(product_id, name, cost, quantity, date_created, date_updated) 
 	VALUES ($1, $2, $3, $4, $5, $6)`
 
-	if _, err := db.Exec(q, newProduct.ID, newProduct.Name, newProduct.Cost, newProduct.Quantity, newProduct.DateCreated, newProduct.DateUpdated); err != nil {
+	if _, err := db.ExecContext(ctxt, q, newProduct.ID, newProduct.Name, newProduct.Cost, newProduct.Quantity, newProduct.DateCreated, newProduct.DateUpdated); err != nil {
 		return nil, errors.Wrapf(err, "Inserting product: %v", np)
 	}
 
