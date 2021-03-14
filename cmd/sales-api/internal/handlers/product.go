@@ -55,7 +55,7 @@ func (productService *Products) Retrieve(w http.ResponseWriter, r *http.Request)
 func (productService *Products) Create(w http.ResponseWriter, r *http.Request) error {
 
 	var np product.NewProduct
-	if err := web.Decode(r, np); err != nil {
+	if err := web.Decode(r, &np); err != nil {
 		return err
 	}
 
